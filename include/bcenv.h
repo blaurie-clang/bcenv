@@ -1,6 +1,7 @@
 #ifndef BCENV_BCENV_H
 #define BCENV_BCENV_H
 
+#include <string.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <errno.h>
@@ -24,13 +25,13 @@ struct bcenv_cache {
 };
 
 /**
- * for now the cache will simply be a basic array list.
+ * for now the cache will simply be a basic array list. Probably should be a map.
  * @param cache
  */
 static void private_bcenv_cache_init(struct bcenv_cache *cache) {
 	cache->capacity = 0;
 	cache->count = 0;
-	cache->cache = malloc(sizeof(struct bcenv_cache) * 20);
+	cache->cache = calloc(sizeof(struct bcenv_cache) * 20);
 	if (cache->cache == NULL) {
 		cache->capacity = 0;
 		cache->count = 0;
@@ -52,8 +53,17 @@ static void private_bcenv_cache_add(struct bcenv_cache *cache, const struct bcen
 	*p = pair;
 }
 
-static void private_bcenv_cache_get(struct bcenv_cache *cache, const char *key) {
-	
+static char *private_bcenv_cache_get(struct bcenv_cache *cache, const char *key) {
+	struct bcenv_pair *p = cache->cache;
+	size_t count = cache->count;
+
+	for (size_t i = 0; i < count; i++) {
+		if (strcmp(key, p[i].key) == 0) {
+			return p[i].value;
+		}
+	}
+
+	return NULL;
 }
 
 
