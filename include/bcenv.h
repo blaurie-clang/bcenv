@@ -146,6 +146,12 @@ char *bcenv_get(struct bcenv *env, const char *const key) {
 	//todo: check the file loaded memory cache for a key, return the associated value
 	//		if the file cache doesn't have it, check the environment variable memory cache
 	//		if the environment variable memory cache doesn't have it, check the environment
+
+
+	//man getenv() -- returns a point to an environment variables value, or null if it doesn't exist.
+	// according to man pages, getenv *could* be used to modify environment, or also, the location that is returned
+	//may be static, meaning multiple calls would change the value.
+	//So when we cache the value, we will create a copy of it.
 }
 
 
