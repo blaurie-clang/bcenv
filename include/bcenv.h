@@ -14,8 +14,8 @@
  */
 
 struct bcenv_pair {
-	char *key;
-	char *value;
+	const char *key;
+	const char *value;
 };
 
 struct bcenv_cache {
@@ -36,6 +36,13 @@ static void private_bcenv_cache_init(struct bcenv_cache *cache) {
 		cache->capacity = 0;
 		cache->count = 0;
 	}
+}
+
+static void private_bcenv_cache_free(struct bcenv_cache *cache) {
+	cache->capacity = 0;
+	cache->count = 0;
+	free(cache->cache);
+	cache->cache = NULL;
 }
 
 static void private_bcenv_cache_add(struct bcenv_cache *cache, const struct bcenv_pair pair) {
@@ -75,23 +82,65 @@ struct bcenv {
 /**
  * high level interface
  */
-int bcenv_init(struct bcenv *env) {
-	//todo: initialize the bcenv struct
-}
-int bcenv_initf(struct bcenv *env, const char *const filename) {
-	//todo: initialize, open and read an env file
-}
-int bcenv_initfd(struct bcenv *env, FILE *fp) {
-	//todo: initialize, read a provided file to memory
-}
 int bcenv_loadf(struct bcenv *env, const char *const filename) {
 	//todo: on an initialized bcenv, open and load an file to memory
 }
+
 int bcenv_loadfd(struct bcenv *env, FILE *fp) {
 	//todo: on an initialized bcenv, load a provided file to memory
 }
+
+int bcenv_init(struct bcenv *env) {
+
+	private_bcenv_cache_init(&(env->env_cache));
+	if (env->env_cache.cache == NULL) {
+		return 0;
+	}
+
+	private_bcenv_cache_init(&(env->file_cache));
+	if (env->file_cache.cache == NULL) {
+		private_bcenv_cache_free(&(env->env_cache));
+		return 0;
+	}
+
+	return 1;
+}
+
+int bcenv_initf(struct bcenv *env, const char *const filename) {
+	if (!bcenv_init(env)) {
+		return 0;
+	}
+
+	return bcenv_loadf(env, filename);
+}
+
+int bcenv_initfd(struct bcenv *env, FILE *fp) {
+	if (!bcenv_init(env)) {
+		return 0;
+	}
+
+	return bcenv_loadfd(env, fp);
+}
+
+/**
+ * Add the key value pair to the bcenv. If a key already exists, nothing happens.
+ * @param env
+ * @param key
+ * @param value
+ * @return
+ */
 int bcenv_add(struct bcenv *env, const char * const key, const char *const value) {
-	//todo: add a variable to the file loaded memory cache
+	if (!private_bcenv_cache_get(&(env->file_cache), key)) {
+		struct bcenv_pair pair = {
+				.key = key,
+				.value = value
+		};
+		private_bcenv_cache_add(&(env->file_cache), pair);
+
+		return 1;
+	}
+
+	return 0;
 }
 char *bcenv_get(struct bcenv *env, const char *const key) {
 	//todo: check the file loaded memory cache for a key, return the associated value
