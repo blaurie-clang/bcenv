@@ -5,6 +5,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <errno.h>
+#include <assert.h>
 
 /**
  * bcenv will be a program meant for loading up the environment
@@ -82,15 +83,43 @@ struct bcenv {
 /**
  * high level interface
  */
-int bcenv_loadf(struct bcenv *env, const char *const filename) {
-	//todo: on an initialized bcenv, open and load an file to memory
+int bcenv_loadfd(struct bcenv *env, FILE *fp) {
+	assert(env != NULL);
+	assert(fp != NULL);
+
+	fseek(fp, 0L, SEEK_END);
+	long num_bytes = ftell(fp);
+	fseek(fp, 0, SEEK_SET);
+
+	char *buffer = (char *)calloc(num_bytes, sizeof(char));
+	if (!buffer) {
+		return 0;
+	}
+
+	//todo parse the key / value pairs into the file_cache
 }
 
-int bcenv_loadfd(struct bcenv *env, FILE *fp) {
-	//todo: on an initialized bcenv, load a provided file to memory
+
+int bcenv_loadf(struct bcenv *env, const char *const filename) {
+	assert(env != NULL);
+	assert(filename != NULL);
+
+	FILE *fp = fopen(filename, "r");
+
+	if (fp == NULL) {
+		return 0;
+	}
+
+	if (bcenv_loadfd(env, fp) == 0) {
+		fclose(fp);
+		return 0;
+	}
+
+	return 1;
 }
 
 int bcenv_init(struct bcenv *env) {
+	assert(env != NULL);
 
 	private_bcenv_cache_init(&(env->env_cache));
 	if (env->env_cache.cache == NULL) {
@@ -107,7 +136,10 @@ int bcenv_init(struct bcenv *env) {
 }
 
 int bcenv_initf(struct bcenv *env, const char *const filename) {
-	if (!bcenv_init(env)) {
+	assert(env != NULL);
+	assert(filename != NULL);
+
+	if (!bcenv_init(env) || !filename) {
 		return 0;
 	}
 
@@ -115,6 +147,9 @@ int bcenv_initf(struct bcenv *env, const char *const filename) {
 }
 
 int bcenv_initfd(struct bcenv *env, FILE *fp) {
+	assert(env != NULL);
+	assert(fp != NULL);
+
 	if (!bcenv_init(env)) {
 		return 0;
 	}
@@ -130,6 +165,10 @@ int bcenv_initfd(struct bcenv *env, FILE *fp) {
  * @return
  */
 int bcenv_add(struct bcenv *env, const char * const key, const char *const value) {
+	assert(env != NULL);
+	assert(key != NULL);
+	assert(value != NULL);
+
 	if (!private_bcenv_cache_get(&(env->file_cache), key)) {
 		struct bcenv_pair pair = {
 				.key = key,
@@ -143,6 +182,9 @@ int bcenv_add(struct bcenv *env, const char * const key, const char *const value
 	return 0;
 }
 char *bcenv_get(struct bcenv *env, const char *const key) {
+	assert(env != NULL);
+	assert(key != NULL);
+
 	//todo: check the file loaded memory cache for a key, return the associated value
 	//		if the file cache doesn't have it, check the environment variable memory cache
 	//		if the environment variable memory cache doesn't have it, check the environment
